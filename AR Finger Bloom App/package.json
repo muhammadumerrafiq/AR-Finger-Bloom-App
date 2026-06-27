@@ -1,0 +1,26 @@
+{
+  "name": "finger-bloom",
+  "version": "1.0.0",
+  "description": "An interactive, browser-based Augmented Reality experience where beautiful flowers grow and bloom from your fingertips using MediaPipe Hand Tracking.",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8080 -c-1"
+  },
+  "dependencies": {
+    "@mediapipe/camera_utils": "latest",
+    "@mediapipe/drawing_utils": "latest",
+    "@mediapipe/hands": "latest"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "keywords": [
+    "mediapipe",
+    "augmented-reality",
+    "canvas-api",
+    "hands-tracking",
+    "creative-coding"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

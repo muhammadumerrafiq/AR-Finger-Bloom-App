@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Finger Bloom - Premium Augmented Reality Experience. Grow procedurally animated flowers from your fingertips using real-time smoothed hand tracking, physical petal engines, and dual-pass screen bloom.">
+  <title>Finger Bloom Pro • Web AR Art Installation</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- MediaPipe dependencies (CDN load with automatic fallback) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Hidden Video Element for webcam feed -->
+  <video id="webcam" autoplay playsinline muted></video>
+
+  <!-- Fullscreen Rendering Canvas -->
+  <canvas id="ar-canvas"></canvas>
+
+  <!-- Top Action Status Bar -->
+  <div id="top-action-bar">
+    <div class="brand">🌸 Finger Bloom Pro</div>
+    <div class="actions-wrapper">
+      <button class="btn-action-round" id="btn-trigger-guide" aria-label="Open Gesture Guide" title="Gesture Guide">
+        <span class="btn-icon">📖</span> <span class="btn-lbl">Guide</span>
+      </button>
+      <button class="btn-action-round" id="btn-trigger-settings" aria-label="Open Settings" title="Settings">
+        <span class="btn-icon">⚙️</span> <span class="btn-lbl">Settings</span>
+      </button>
+      <button class="btn-action-round" id="btn-audio-toggle" aria-label="Toggle Audio" title="Mute/Unmute Sounds">
+        <span class="btn-icon" id="audio-icon">🔇</span> <span class="btn-lbl">Sound</span>
+      </button>
+      <button class="btn-action-round" id="btn-ui-snapshot" aria-label="Take Canvas Snapshot" title="Take Photo">
+        <span class="btn-icon">📸</span> <span class="btn-lbl">Photo</span>
+      </button>
+      <div id="camera-dropdown-container">
+        <button class="btn-action-round" id="btn-camera-toggle" aria-label="Switch Camera" title="Switch Front/Rear Camera">
+          <span class="btn-icon">🔄</span> <span class="btn-lbl">Camera</span>
+        </button>
+        <div id="camera-dropdown-list" class="glass-dropdown"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Gesture Guide Panel -->
+  <div id="gesture-guide-panel" aria-label="Gesture Guide">
+    <div class="guide-panel-header">
+      <span class="guide-panel-title">🌸 Gesture Guide</span>
+      <button class="guide-close-btn" id="btn-close-guide" aria-label="Close Gesture Guide">×</button>
+    </div>
+    <div class="guide-panel-body">
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="gesture-anim-hand palm-anim">
+            <div class="anim-finger f1"></div><div class="anim-finger f2"></div>
+            <div class="anim-finger f3"></div><div class="anim-finger f4"></div>
+            <div class="anim-thumb"></div><div class="anim-palm"></div>
+          </div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">Open Palm</div>
+          <div class="guide-desc">Bloom flowers on all fingertips</div>
+        </div>
+      </div>
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="gesture-anim-hand peace-anim">
+            <div class="anim-finger f1 up"></div><div class="anim-finger f2 up"></div>
+            <div class="anim-finger f3 down"></div><div class="anim-finger f4 down"></div>
+            <div class="anim-thumb down"></div><div class="anim-palm"></div>
+          </div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">✌️ Peace Sign</div>
+          <div class="guide-desc">Dense petal burst from two fingers</div>
+        </div>
+      </div>
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="guide-emoji-icon fist-pulse">✊</div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">✊ Fist → Bloom</div>
+          <div class="guide-desc">Charge energy, open to release blast</div>
+        </div>
+      </div>
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="guide-emoji-icon heart-beat">🫶</div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">🫶 Two-Hand Heart</div>
+          <div class="guide-desc">Join thumbs &amp; index for a heart vine</div>
+        </div>
+      </div>
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="guide-emoji-icon pinch-pulse">🤏</div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">🤏 Pinch &amp; Release</div>
+          <div class="guide-desc">Plant a floating seed flower</div>
+        </div>
+      </div>
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="guide-emoji-icon thumbs-bounce">👍</div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">👍 Thumbs Up</div>
+          <div class="guide-desc">Giant rotating rose on thumb tip</div>
+        </div>
+      </div>
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="guide-emoji-icon ok-spin">👌</div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">👌 OK Sign</div>
+          <div class="guide-desc">Magical golden ring around palm</div>
+        </div>
+      </div>
+
+      <div class="guide-item">
+        <div class="guide-icon-wrap">
+          <div class="guide-emoji-icon spread-pulse">👐</div>
+        </div>
+        <div class="guide-text">
+          <div class="guide-name">👐 Spread Fingers</div>
+          <div class="guide-desc">Rainbow spectrum flower shift</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Right Side Drawer: Settings Controls -->
+  <div id="settings-drawer" class="drawer drawer-right">
+    <div class="drawer-header">
+      <h2>⚙️ Bloom Settings</h2>
+      <button class="btn-close-drawer" id="btn-close-settings" aria-label="Close Settings">&times;</button>
+    </div>
+    
+    <div class="drawer-content">
+      <!-- Performance Profiles -->
+      <div class="control-group">
+        <label>Performance Presets</label>
+        <div class="preset-segmented-control">
+          <button class="btn-preset-opt" data-preset="low">Low Power</button>
+          <button class="btn-preset-opt" data-preset="performance">Performance</button>
+          <button class="btn-preset-opt active" data-preset="quality">Quality</button>
+          <button class="btn-preset-opt" data-preset="ultra">Ultra</button>
+        </div>
+      </div>
+
+      <!-- Sliders section -->
+      <div class="control-group header-spacing">
+        <label for="flower-size">Flower Base Size <span class="value" id="val-flower-size">22px</span></label>
+        <input type="range" id="flower-size" min="12" max="45" step="1" value="22">
+      </div>
+
+      <div class="control-group">
+        <label for="particle-rate">Particle Count <span class="value" id="val-particle-rate">2</span></label>
+        <input type="range" id="particle-rate" min="0" max="10" step="1" value="2">
+      </div>
+
+      <div class="control-group">
+        <label for="trail-length">Trail Intensity <span class="value" id="val-trail-length">8</span></label>
+        <input type="range" id="trail-length" min="0" max="30" step="1" value="8">
+      </div>
+
+      <div class="control-group">
+        <label for="glow-amount">Bloom Intensity <span class="value" id="val-glow-amount">25%</span></label>
+        <input type="range" id="glow-amount" min="10" max="100" step="5" value="25">
+      </div>
+
+      <div class="control-group">
+        <label for="particle-gravity">Particle Drift (Y) <span class="value" id="val-particle-gravity">-0.03</span></label>
+        <input type="range" id="particle-gravity" min="-0.25" max="0.25" step="0.01" value="-0.03">
+      </div>
+
+      <div class="control-group">
+        <label for="detection-confidence">Detection Confidence <span class="value" id="val-detection-confidence">0.70</span></label>
+        <input type="range" id="detection-confidence" min="0.30" max="0.95" step="0.05" value="0.70">
+      </div>
+
+      <!-- Toggle features -->
+      <div class="control-group toggles-group">
+        <div class="toggle-item">
+          <span>Random Flower Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-random-mode">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-item">
+          <span>Particles Layer</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-particles" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-item">
+          <span>Trails Layer</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-trails" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-item">
+          <span>Soft Glow Filter</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-glow" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-item">
+          <span>Ambient Background (Fireflies)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-ambient" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-item">
+          <span>Landmark Skeleton (Debug)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-debug">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-item">
+          <span>FPS Monitor</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-fps" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-item">
+          <span>Dynamic Throttle (Auto-FPS)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-throttle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn-action" id="btn-reset-settings" style="width: 100%;">Reset to Defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Flower Selector Carousel -->
+  <div id="flower-selector-container">
+    <div class="selector-title">🌸 ACTIVE FLOWER SPECIES 🌸</div>
+    <div class="flower-carousel" id="flower-carousel">
+      <div class="flower-item active" data-type="cherry">
+        <div class="flower-item-icon">🌸</div>
+        <div class="flower-item-name">Cherry</div>
+      </div>
+      <div class="flower-item" data-type="rose">
+        <div class="flower-item-icon">🌹</div>
+        <div class="flower-item-name">Rose</div>
+      </div>
+      <div class="flower-item" data-type="daisy">
+        <div class="flower-item-icon">🌼</div>
+        <div class="flower-item-name">Daisy</div>
+      </div>
+      <div class="flower-item" data-type="sunflower">
+        <div class="flower-item-icon">🌻</div>
+        <div class="flower-item-name">Sunflower</div>
+      </div>
+      <div class="flower-item" data-type="tulip">
+        <div class="flower-item-icon">🌷</div>
+        <div class="flower-item-name">Tulip</div>
+      </div>
+      <div class="flower-item" data-type="lotus">
+        <div class="flower-item-icon">🪷</div>
+        <div class="flower-item-name">Lotus</div>
+      </div>
+      <div class="flower-item" data-type="lavender">
+        <div class="flower-item-icon">💜</div>
+        <div class="flower-item-name">Lavender</div>
+      </div>
+      <div class="flower-item" data-type="hibiscus">
+        <div class="flower-item-icon">🌺</div>
+        <div class="flower-item-name">Hibiscus</div>
+      </div>
+      <div class="flower-item" data-type="crystal">
+        <div class="flower-item-icon">✨</div>
+        <div class="flower-item-name">Crystal</div>
+      </div>
+      <div class="flower-item" data-type="magical">
+        <div class="flower-item-icon">⭐</div>
+        <div class="flower-item-name">Magic</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Button to reopen flower selector -->
+  <button id="btn-open-flower-selector" aria-label="Open Flower Selector" title="Choose Flower Species">
+    🌸
+  </button>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="loading-card">
+      <div class="loading-logo">Finger Bloom Pro</div>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: -10px;">Augmented Reality Creative Installation</p>
+      
+      <div class="spinner-wrapper">
+        <div class="spinner"></div>
+        <div class="spinner-inner"></div>
+      </div>
+      
+      <div class="loading-status" id="loading-status">Waking camera sensors...</div>
+      <div class="loading-bar-container">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Overlay -->
+  <div id="error-overlay">
+    <div class="error-card">
+      <div class="error-icon">⚠️</div>
+      <div class="error-title">Setup Blocked</div>
+      <div class="error-msg" id="error-message">Webcam access is required to run the Augmented Reality experience. Please verify permissions.</div>
+      <button class="btn-retry" id="btn-retry">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Collapsible Debug Tracker Panel -->
+  <div id="debug-tracker" class="debug-minimized" aria-label="Debug Tracker">
+    <div id="debug-header">
+      <span id="debug-header-fps">🌿 <span id="fps-val">60</span> FPS</span>
+      <button id="debug-toggle-btn" aria-label="Toggle Debug Panel" title="Expand/Collapse">⤢</button>
+    </div>
+    <div id="debug-body">
+      <div class="debug-row"><span class="debug-label">FPS</span><span class="debug-val" id="dbg-fps">60</span></div>
+      <div class="debug-row"><span class="debug-label">Hands</span><span class="debug-val" id="dbg-hands">0</span></div>
+      <div class="debug-row"><span class="debug-label">Gesture L</span><span class="debug-val" id="dbg-gesture-l">none</span></div>
+      <div class="debug-row"><span class="debug-label">Gesture R</span><span class="debug-val" id="dbg-gesture-r">none</span></div>
+      <div class="debug-row"><span class="debug-label">Particles</span><span class="debug-val" id="dbg-particles">0</span></div>
+      <div class="debug-row"><span class="debug-label">Frame δ</span><span class="debug-val" id="dbg-framedelta">0ms</span></div>
+      <div class="debug-row"><span class="debug-label">Heart Phase</span><span class="debug-val" id="dbg-heart">none</span></div>
+    </div>
+  </div>
+
+  <!-- Gesture Action Toast Alert Overlay -->
+  <div id="gesture-toast">Fist Charged</div>
+
+  <!-- Core Script Module -->
+  <script src="script.js" type="module"></script>
+</body>
+</html>
